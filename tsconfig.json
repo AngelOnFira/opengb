@@ -1,0 +1,22 @@
+// Required for TypeScript -> JSON Schema configs
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "esModuleInterop": true,
+        "experimentalDecorators": false,
+        "inlineSourceMap": true,
+        "isolatedModules": true,
+        "jsx": "react",
+        "lib": [
+            "ESNext", "DOM", "DOM.Iterable"
+        ],
+        "module": "esnext",
+        "moduleDetection": "force",
+        "strict": true,
+        "target": "esnext",
+        "useDefineForClassFields": true,
+
+        "types": ["./dist/deno-runtime.d.ts", "./dist/custom-types.d.ts"],
+        "allowImportingTsExtensions": true
+    }
+}
