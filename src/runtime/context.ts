@@ -2,7 +2,7 @@ import { Runtime } from "./runtime.ts";
 import { Trace } from "./trace.ts";
 import { RuntimeError } from "./error.ts";
 import { appendTraceEntry } from "./trace.ts";
-import { buildDependencyRegistryProxy, buildActorRegistryProxy, RegistryCallMap } from "./proxy.ts";
+import { buildDependencyRegistryProxy, buildActorRegistryProxy, RegistryCallMap, ActorProxies } from "./proxy.ts";
 import { DependencyScriptCallFunction } from "../types/registry.ts";
 
 export class Context<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT> {
@@ -182,7 +182,7 @@ export class ModuleContext<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT,
 		return this.runtime.config.modules[this.moduleName].userConfig as UserConfigT;
 	}
 
-	public get actors() {
+	public get actors(): ActorProxies<ActorsCamelT> {
 		return buildActorRegistryProxy<ActorsSnakeT, ActorsCamelT>(
 			this.runtime,
 			this.actorCaseConversionMap,
@@ -201,6 +201,24 @@ export class ScriptContext<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT,
 		moduleName: string,
 		db: DatabaseT,
 		public readonly scriptName: string,
+		dependencyCaseConversionMap: RegistryCallMap,
+		actorCaseConversionMap: RegistryCallMap,
+	) {
+		super(runtime, trace, moduleName, db, dependencyCaseConversionMap, actorCaseConversionMap);
+	}
+}
+
+/**
+ * Context for a route.
+ */
+export class RouteContext<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT, UserConfigT, DatabaseT>
+	extends ModuleContext<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT, UserConfigT, DatabaseT> {
+	public constructor(
+		runtime: Runtime<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT>,
+		trace: Trace,
+		moduleName: string,
+		db: DatabaseT,
+		public readonly routeName: string,
 		dependencyCaseConversionMap: RegistryCallMap,
 		actorCaseConversionMap: RegistryCallMap,
 	) {

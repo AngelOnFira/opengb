@@ -1,105 +1,131 @@
+import { Script, Route } from "./mod.ts";
 import { Runtime } from "./runtime.ts";
+import { PathResolver } from "./path_resolver.ts";
+import { notFoundResponse, badBodyResponse, serverOrRuntimeError } from "./responses.ts";
 
 const MODULE_CALL = /^\/modules\/(?<module>\w+)\/scripts\/(?<script>\w+)\/call\/?$/;
 
-interface RequestInfo {
-	remoteAddress: string;
-}
 
-export async function handleRequest<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT>(
+export async function handleScriptCall<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT>(
 	runtime: Runtime<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT>,
+	url: URL,
+	moduleName: string,
+	scriptName: string,
+	script: Script,
 	req: Request,
-	info: RequestInfo,
-): Promise<Response> {
-	const url = new URL(req.url);
+	info: Deno.ServeHandlerInfo,
+) {
+	// If a script is not public, return 404
+	if (!script.public) return notFoundResponse();
 
-	const matches = MODULE_CALL.exec(url.pathname);
-	if (req.method == "POST" && matches?.groups) {
-		// Lookup script
-		const moduleName = matches.groups.module;
-		const scriptName = matches.groups.script;
-		const script = runtime.config.modules[moduleName]?.scripts[scriptName];
+	// Create context
+	const ctx = runtime.createRootContext({
+		httpRequest: {
+			method: req.method,
+			path: url.pathname,
+			remoteAddress: info.remoteAddr.hostname,
+			headers: Object.fromEntries(req.headers.entries()),
+		},
+	});
 
-		if (script?.public) {
-			// Create context
-			const ctx = runtime.createRootContext({
-				httpRequest: {
-					method: req.method,
-					path: url.pathname,
-					remoteAddress: info.remoteAddress,
-					headers: Object.fromEntries(req.headers.entries()),
-				},
-			});
-
-			// Parse body
-			let body;
-			try {
-				body = await req.json();
-			} catch {
-				const output = {
-					message: "Request must have a valid JSON body.",
-				};
-				return new Response(JSON.stringify(output), {
-					status: 400,
-					headers: {
-						"Content-Type": "application/json",
-						"Access-Control-Allow-Origin": "*",
-					},
-				});
-			}
-
-			try {
-				// Call module
-				const output = await ctx.call(
-					moduleName as any,
-					scriptName as any,
-					body,
-				);
-
-				if (output.__tempPleaseSeeOGBE3_NoData) {
-					return new Response(undefined, {
-						status: 204,
-						headers: {
-							"Access-Control-Allow-Origin": "*",
-						},
-					});
-				}
-
-				return new Response(JSON.stringify(output), {
-					status: 200,
-					headers: {
-						"Content-Type": "application/json",
-						"Access-Control-Allow-Origin": "*",
-					},
-				});
-			} catch (e) {
-				// Error response
-				const output = {
-					message: e.message,
-					stack: e.stack,
-				};
-
-				return new Response(JSON.stringify(output), {
-					status: 500,
-					headers: {
-						"Content-Type": "application/json",
-						"Access-Control-Allow-Origin": "*",
-					},
-				});
-			}
-		}
+	// Parse body
+	let body;
+	try {
+		body = await req.json();
+	} catch {
+		return badBodyResponse();
 	}
 
-	// Not found response
+	let output: any;
+	try {
+		// Call module
+		output = await ctx.call(
+			moduleName as any,
+			scriptName as any,
+			body,
+		);
+	} catch (e) {
+		return serverOrRuntimeError(e);
+	}
+
 	return new Response(
-		JSON.stringify({
-			"message": "Route not found. Make sure the URL and method are correct.",
-		}),
+		JSON.stringify(output),
 		{
+			status: 200,
 			headers: {
 				"Content-Type": "application/json",
+				"Access-Control-Allow-Origin": "*",
 			},
-			status: 404,
 		},
 	);
+}
+
+
+export async function handleRouteCall<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT>(
+	runtime: Runtime<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT>,
+	url: URL,
+	moduleName: string,
+	routeName: string,
+	route: Route,
+	req: Request,
+	info: Deno.ServeHandlerInfo,
+) {
+	if (!route.methods.has(req.method)) notFoundResponse();
+
+	// Create context
+	const ctx = runtime.createRootRouteContext(
+		{
+			httpRequest: {
+				method: req.method,
+				path: url.pathname,
+				remoteAddress: info.remoteAddr.hostname,
+				headers: Object.fromEntries(req.headers.entries()),
+			},
+		},
+		moduleName,
+		routeName,
+	);
+
+	// Call route
+	const res = await ctx.runBlock(async () => await route.run(ctx, req));
+	console.log(
+		`Route Response ${moduleName}.${routeName}:\n${JSON.stringify(res, null, 2)}`,
+	);
+
+	return res;
+}
+
+export function serverHandler<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT>(
+	runtime: Runtime<DependenciesSnakeT, DependenciesCamelT, ActorsSnakeT, ActorsCamelT>,
+): Deno.ServeHandler {
+	const resolver = new PathResolver(runtime.routePaths());
+
+	return async (
+		req: Request,
+		info: Deno.ServeHandlerInfo,
+	): Promise<Response> => {
+		const url = new URL(req.url);
+
+		// Normal script call
+		const matches = MODULE_CALL.exec(url.pathname);
+		if (req.method == "POST" && matches?.groups) {
+			// Lookup script
+			const moduleName = matches.groups.module;
+			const scriptName = matches.groups.script;
+			const script = runtime.config.modules[moduleName]?.scripts[scriptName];
+			if (!script) return notFoundResponse();
+			return handleScriptCall(runtime, url, moduleName, scriptName, script, req, info);
+		}
+
+		// Route call
+		const resolved = resolver.resolve(url.pathname);
+		if (!resolved) return notFoundResponse();
+		
+		const { module, route } = resolved;
+
+		const routeObj = runtime.config.modules[module]?.routes?.[route];
+		if (!routeObj) return notFoundResponse();
+
+		return handleRouteCall(runtime, url, module, route, routeObj, req, info);
+	};
 }

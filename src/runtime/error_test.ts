@@ -1,21 +1,38 @@
 import { assertEquals, assertExists } from "../deps.ts";
+import { ActorDriver } from "./actor.ts";
 import { ModuleContext } from "./context.ts";
 import { RuntimeError } from "./error.ts";
 import { newTrace } from "./mod.ts";
 import { Runtime } from "./runtime.ts";
 
-type ErrReg = { test_module: Record<string, never> };
-type ErrRegCamel = { testModule: Record<string, never> };
+type ErrDepSnake = { test_module: Record<string, never> };
+type ErrDepCamel = { testModule: Record<string, never> };
+
+type ErrActorSnake = { test_module: Record<string, never> };
+type ErrActorCamel = { testModule: Record<string, never> };
+
+
+type RuntimeType = Runtime<ErrDepSnake, ErrDepCamel, ErrActorSnake, ErrActorCamel>;
+type ModuleCtxType = ModuleContext<ErrDepSnake, ErrDepCamel, ErrActorSnake, ErrActorCamel, null, undefined>;
 
 Deno.test("error", async () => {
-	const camelMap = {
-		testModule: {},
-	} as const;
+	const actorDriver: ActorDriver = {
+		getId: async () => "",
+		getActor: async () => ({}),
+		callActor: async () => ({}),
+		createActor: async () => {},
+		actorExists: async () => false,
+	};
+	const dependencyCaseConversionMap = { testModule: {} } as const;
+	const actorCaseConversionMap = { testModule: {} } as const;
+
 	// Setup
-	const runtime = new Runtime<ErrReg, ErrRegCamel>({
+	const runtime: RuntimeType = new Runtime({
 		modules: {
 			test_module: {
 				scripts: {},
+				routes: {},
+				actors: {},
 				errors: {
 					"TEST_ERROR": {},
 				},
@@ -23,13 +40,14 @@ Deno.test("error", async () => {
 				userConfig: null,
 			},
 		},
-	}, camelMap);
-	const moduleContext = new ModuleContext<ErrReg, ErrRegCamel, null, undefined>(
+	}, actorDriver, dependencyCaseConversionMap, actorCaseConversionMap);
+	const moduleContext: ModuleCtxType = new ModuleContext(
 		runtime,
 		newTrace({ internalTest: {} }),
 		"test_module",
 		undefined,
-		camelMap,
+		dependencyCaseConversionMap,
+		actorCaseConversionMap,
 	);
 
 	// Create error

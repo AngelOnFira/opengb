@@ -32,6 +32,7 @@ export async function compileModuleHelper(
 				Runtime,
 				TestContext as TestContextInner,
 				ScriptContext as ScriptContextInner,
+				RouteContext as RouteContextInner,
 			} from "${runtimePath}";
 			import config from "${runtimeConfigPath}";
 			import { dependencyCaseConversionMap } from "${dependencyCaseConversionMapPath}";
@@ -65,6 +66,7 @@ export async function compileModuleHelper(
 	genModule(project, module, helper, importBlock, userConfigType);
 	genTest(project, module, helper, userConfigType);
 	genScript(project, module, helper, userConfigType);
+	genRoute(project, module, helper, userConfigType);
 
 	// Write source
 	await helper.write();
@@ -271,5 +273,32 @@ function genScript(
 				${userConfigType},
 				${module.db ? "prisma.PrismaClient" : "undefined"}
 			>;
+		`;
+}
+
+function genRoute(
+	_project: Project,
+	module: Module,
+	helper: GeneratedCodeBuilder,
+	userConfigType: string,
+) {
+	// Export block
+	helper.chunk.withNewlinesPerChunk(1)
+		.newline()
+		.append`
+			export type RouteContext = RouteContextInner<
+				DependenciesSnake,
+				DependenciesCamel,
+				ActorsSnake,
+				ActorsCamel,
+				${userConfigType},
+				${module.db ? "prisma.PrismaClient" : "undefined"}
+			>;
+
+			export type RouteRequest = Request;
+			export const RouteRequest = Request;
+
+			export type RouteResponse = Response;
+			export const RouteResponse = Response;
 		`;
 }

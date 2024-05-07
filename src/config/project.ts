@@ -50,6 +50,18 @@ export interface ProjectModuleConfig extends Record<string, unknown> {
 	 * The config that configures how this module is ran at runtime.
 	 */
 	config?: any;
+
+	/**
+	 * Config options controlling how the routes are implemented and accessed.
+	 */
+	routes?: ProjectRouteConfig;
+}
+
+export interface ProjectRouteConfig {
+	/**
+	 * The path prefix for all routes in this module.
+	 */
+	pathPrefix: string;
 }
 
 // export async function readConfig(path: string): Promise<ProjectConfig> {
