@@ -38,6 +38,15 @@ export async function generateEntrypoint(project: Project, opts: BuildOpts) {
 			`;
 	}
 
+	let corsSource = "";
+	if (project.config.runtime?.cors) {
+		corsSource = `
+			cors: {
+				origins: new Set(${JSON.stringify(project.config.runtime.cors.origins)}),
+			},
+		`;
+	}
+
 	// Generate config.ts
 	const configSource = `
 		${autoGenHeader()}
@@ -49,6 +58,7 @@ export async function generateEntrypoint(project: Project, opts: BuildOpts) {
 
 		export default {
 			modules: ${modConfig},
+			${corsSource}
 		} as Config;
 		`;
 
