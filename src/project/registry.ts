@@ -54,8 +54,8 @@ export async function loadDefaultRegistry(projectRoot: string, signal?: AbortSig
 		{
 			git: {
 				url: {
-					https: "https://github.com/rivet-gg/opengb-registry.git",
-					ssh: "git@github.com:rivet-gg/opengb-registry.git",
+					https: "https://github.com/rivet-gg/opengb-modules.git",
+					ssh: "git@github.com:rivet-gg/opengb-modules.git",
 				},
 				// TODO: https://github.com/rivet-gg/opengb/issues/151
 				rev: "baea5c026c679869165a575c70b1a75401c10ca9",
