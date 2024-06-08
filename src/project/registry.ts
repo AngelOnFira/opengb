@@ -54,8 +54,8 @@ export async function loadDefaultRegistry(projectRoot: string, signal?: AbortSig
 		{
 			git: {
 				url: {
-					https: "https://github.com/rivet-gg/opengb-registry.git",
-					ssh: "git@github.com:rivet-gg/opengb-registry.git",
+					https: "https://github.com/rivet-gg/opengb-modules.git",
+					ssh: "git@github.com:rivet-gg/opengb-modules.git",
 				},
 				// TODO: https://github.com/rivet-gg/opengb/issues/151
 				rev: "3c40379899162d848cea88afc58b4dc6ab4cc546",
@@ -76,7 +76,7 @@ async function resolveRegistryLocal(
 	name: string,
 	config: RegistryConfigLocal,
 ): Promise<ResolveRegistryOutput> {
-	const projectConfigPath = resolve(projectRoot, "backend.yaml");
+	const projectConfigPath = resolve(projectRoot, "backend.json");
 
 	const isExternal = config.isExternal ?? false;
 
@@ -97,7 +97,7 @@ async function resolveRegistryGit(
 	config: RegistryConfigGit,
 	signal?: AbortSignal,
 ): Promise<ResolveRegistryOutput> {
-	const projectConfigPath = resolve(projectRoot, "backend.yaml");
+	const projectConfigPath = resolve(projectRoot, "backend.json");
 
 	const repoPath = resolve(projectRoot, ".opengb", "git_registries", name);
 	const gitRef = resolveGitRef(config);

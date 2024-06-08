@@ -1,7 +1,10 @@
 {
 	"packages": {
 		".": {
-			"release-type": "simple"
+			"release-type": "simple",
+			"extra-files": [
+				"docs/snippets/version.mdx"
+			]
 		}
 	},
 	"changelog-sections": [
