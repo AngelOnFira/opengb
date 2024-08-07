@@ -13,10 +13,14 @@ import { initCommand } from "./commands/init.ts";
 import { cleanCommand } from "./commands/clean.ts";
 import { printError } from "../error/mod.ts";
 import { runShutdown } from "../utils/shutdown_handler.ts";
+import { VERSION } from "../version.ts";
 
 // Run command
 const command = new Command();
 command.action(() => command.showHelp())
+	.name("opengb")
+	.version(VERSION)
+	.description("Open Game Backend CLI")
 	.globalOption("-p, --path <path>", "Path to project root")
 	.throwErrors()
 	.command("init", initCommand)

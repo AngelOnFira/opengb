@@ -3,7 +3,8 @@
 		".": {
 			"release-type": "simple",
 			"extra-files": [
-				"docs/snippets/version.mdx"
+				"docs/snippets/version.mdx",
+				"src/version.ts"
 			]
 		}
 	},
