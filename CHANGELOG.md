@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.1](https://github.com/AngelOnFira/opengb/compare/v2.0.0...v2.0.1) (2024-08-07)
+
+
+### Bug Fixes
+
+* bump version ([ab48a47](https://github.com/AngelOnFira/opengb/commit/ab48a47c9c7a378237674e3ea8eb05630d239313))
+* update version ([01bec40](https://github.com/AngelOnFira/opengb/commit/01bec40b992eb67ff437de3197dc9615c48cd44a))
+
 ## [2.0.0](https://github.com/AngelOnFira/opengb/compare/v1.0.0...v2.0.0) (2024-08-07)
 
 
